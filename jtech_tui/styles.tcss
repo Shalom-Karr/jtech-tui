@@ -1,0 +1,182 @@
+/* Global look */
+Screen {
+    background: $surface;
+}
+
+Header {
+    background: $primary;
+    color: $text;
+}
+
+Footer {
+    background: $primary-darken-2;
+}
+
+/* Tabs */
+TabbedContent {
+    height: 1fr;
+}
+
+TabbedContent > ContentTabs {
+    background: $panel;
+}
+
+Tabs Tab {
+    padding: 0 2;
+}
+
+Tabs Tab.-active {
+    color: $accent;
+    text-style: bold;
+}
+
+/* Data tables */
+DataTable {
+    height: 1fr;
+    background: $surface;
+}
+
+DataTable > .datatable--header {
+    background: $panel;
+    color: $accent;
+    text-style: bold;
+}
+
+DataTable > .datatable--cursor {
+    background: $accent;
+    color: $background;
+    text-style: bold;
+}
+
+DataTable > .datatable--hover {
+    background: $panel-lighten-1;
+}
+
+/* Markdown viewer */
+#thread-body {
+    padding: 1 2;
+    background: $surface;
+}
+
+MarkdownBlock {
+    margin: 0 0 1 0;
+}
+
+/* Search */
+#search-input {
+    dock: top;
+    margin: 1 2;
+    border: tall $accent;
+    height: 3;
+}
+
+/* Login */
+LoginScreen {
+    align: center middle;
+}
+
+LoginScreen #login-box {
+    width: 54;
+    height: auto;
+    border: round $accent;
+    padding: 1 2;
+    background: $panel;
+}
+
+LoginScreen #login-title {
+    color: $accent;
+    text-style: bold;
+    content-align: center middle;
+    margin: 0 0 1 0;
+}
+
+LoginScreen Input {
+    margin: 0 0 1 0;
+}
+
+LoginScreen #login-error {
+    color: $error;
+    margin: 1 0 0 0;
+}
+
+/* Modals */
+ModalScreen {
+    align: center middle;
+}
+
+ModalScreen > #modal-box {
+    width: 70;
+    max-width: 90%;
+    height: auto;
+    max-height: 80%;
+    border: round $accent;
+    background: $panel;
+    padding: 1 2;
+}
+
+ModalScreen #modal-title {
+    text-style: bold;
+    color: $accent;
+    margin: 0 0 1 0;
+}
+
+ModalScreen Input {
+    margin: 0 0 1 0;
+}
+
+ModalScreen OptionList {
+    height: auto;
+    max-height: 12;
+    border: tall $panel-lighten-2;
+    margin: 0 0 1 0;
+}
+
+ModalScreen #modal-hint {
+    color: $text-muted;
+    margin: 1 0 0 0;
+}
+
+/* Thread view header */
+#thread-header {
+    background: $panel;
+    color: $accent;
+    text-style: bold;
+    padding: 0 2;
+    height: 1;
+}
+
+/* Thread posts list */
+#posts {
+    background: $surface;
+}
+
+#posts > ListItem {
+    background: $surface;
+    border-top: hkey $panel-lighten-1;
+    padding: 0 1;
+    margin: 0;
+}
+
+#posts > ListItem:first-of-type {
+    border-top: none;
+}
+
+#posts > ListItem.--highlight,
+#posts > ListItem.-highlight {
+    background: $boost;
+    border-left: thick $accent;
+}
+
+#posts > ListItem > Markdown {
+    background: transparent;
+}
+
+/* Help modal body */
+#help-scroll {
+    height: 1fr;
+    max-height: 20;
+}
+
+#help-body {
+    padding: 0 1;
+}

@@ -1,0 +1,23 @@
+[project]
+name = "jtech-tui"
+version = "0.1.0"
+description = "Beautiful Python TUI for jtech (Discourse) forums"
+requires-python = ">=3.10"
+license = "GPL-3.0-or-later"
+dependencies = [
+    "textual>=0.80",
+    "requests>=2.31",
+]
+
+[project.scripts]
+jtech = "jtech_tui.app:run"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["jtech_tui*"]
+
+[tool.setuptools.package-data]
+jtech_tui = ["*.tcss"]

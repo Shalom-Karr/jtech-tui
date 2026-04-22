@@ -52,6 +52,29 @@ class JtechApp(App):
         self.cfg.session_cookie = self.client.session_cookie()
         self.cfg.save()
 
+    def logout(self) -> None:
+        """User-initiated sign out. Same teardown as reauth but a different
+        toast so the user knows it was their action, not an expired session.
+        """
+        self.cfg.session_cookie = ""
+        self.cfg.cookies = []
+        self.cfg.username = ""
+        self.cfg.save()
+        self.client = Client(self.cfg.forum_url, "")
+        self.sub_title = self.SUB_TITLE
+        self.call_later(self._logout_swap)
+
+    def _logout_swap(self) -> None:
+        if self.screen_stack and isinstance(self.screen, LoginScreen):
+            return
+        while self.screen_stack:
+            top = self.screen_stack[-1]
+            if getattr(top, "id", None) == "_default":
+                break
+            self.pop_screen()
+        self.push_screen(LoginScreen())
+        self.notify("Signed out.", severity="information")
+
     def reauth(self) -> None:
         # Called from worker threads via call_from_thread. We clear the cookie
         # synchronously so no further requests use it, but defer the screen

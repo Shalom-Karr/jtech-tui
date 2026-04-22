@@ -26,6 +26,7 @@ from ..api import NOTIFICATION_TYPES, Unauthorized
 from ..editor import edit_markdown
 from .composer import (
     CategoryPickerModal,
+    ConfirmModal,
     FilePickerModal,
     NewTopicModal,
     PMComposerModal,
@@ -177,6 +178,7 @@ class MainScreen(Screen):
         Binding("slash", "search", "Search"),
         Binding("U", "upload", "Upload"),
         Binding("L", "leaderboard", "Leaderboard"),
+        Binding("ctrl+shift+o", "logout", "Logout"),
         Binding("ctrl+right", "next_tab", "Next tab", show=False),
         Binding("ctrl+left", "prev_tab", "Prev tab", show=False),
         Binding("down", "tabs_down", "", show=False),
@@ -572,6 +574,18 @@ class MainScreen(Screen):
             if q:
                 self._run_search(q)
 
+    def on_key(self, event: events.Key) -> None:
+        # `esc` in the inline search input hands focus back to the tab bar
+        # so the user can navigate away without clicking or tabbing through.
+        if event.key == "escape":
+            focused = self.focused
+            if focused is not None and getattr(focused, "id", "") == "search-input":
+                try:
+                    self.query_one(Tabs).focus()
+                except NoMatches:
+                    pass
+                event.stop()
+
     @work(thread=True, exclusive=True, group="search")
     def _run_search(self, query: str) -> None:
         try:
@@ -746,6 +760,20 @@ class MainScreen(Screen):
 
     def action_leaderboard(self) -> None:
         self.app.push_screen(LeaderboardScreen())
+
+    def action_logout(self) -> None:
+        user = (self.app.cfg.username or "").strip()
+        prompt = (
+            f"Sign out @{user}?\n\nThis will clear the saved session."
+            if user
+            else "Sign out?\n\nThis will clear the saved session."
+        )
+
+        def _done(confirmed: bool | None) -> None:
+            if confirmed:
+                self.app.logout()
+
+        self.app.push_screen(ConfirmModal(prompt), _done)
 
     @work(thread=True, exclusive=True, group="upload")
     def _do_upload(self, path: str) -> None:

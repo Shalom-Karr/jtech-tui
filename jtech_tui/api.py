@@ -164,18 +164,46 @@ class Client:
             },
             timeout=30,
         )
-        if r.status_code != 200:
-            try:
-                err = r.json().get("error") or (r.json().get("errors") or [None])[0]
-            except Exception:
-                err = None
-            raise RuntimeError(err or f"login failed: HTTP {r.status_code}")
+        # Discourse commonly returns HTTP 200 with an `error` / `errors` body
+        # on bad credentials or rate-limiting. The body is authoritative —
+        # trust the shape we see, not the status code alone.
         try:
             data = r.json()
-            self._username = (data.get("user") or {}).get("username")
         except ValueError:
-            pass
-        return self.session.cookies.get("_t", "") or ""
+            data = None
+
+        def _err_from_body(body: Any) -> str | None:
+            if not isinstance(body, dict):
+                return None
+            err = body.get("error")
+            if isinstance(err, str) and err.strip():
+                return err.strip()
+            errs = body.get("errors")
+            if isinstance(errs, list) and errs:
+                first = errs[0]
+                if isinstance(first, str) and first.strip():
+                    return first.strip()
+            return None
+
+        if r.status_code != 200:
+            msg = _err_from_body(data) or f"login failed: HTTP {r.status_code}"
+            raise RuntimeError(msg)
+
+        msg = _err_from_body(data)
+        if msg:
+            raise RuntimeError(msg)
+
+        if isinstance(data, dict):
+            self._username = (data.get("user") or {}).get("username")
+
+        cookie = self.session.cookies.get("_t", "") or ""
+        if not cookie:
+            # 200 with no error string and no `_t` cookie means Discourse
+            # didn't actually seat a session (e.g. 2FA required, suspended
+            # user, unusual redirect). Surface that instead of silently
+            # dropping the caller into a view-only state.
+            raise RuntimeError("login failed: no session cookie issued")
+        return cookie
 
     def session_cookie(self) -> str:
         return self.session.cookies.get("_t", "") or ""

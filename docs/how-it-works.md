@@ -174,6 +174,27 @@ missing files, malformed JSON, and unknown keys (it filters with
 `dataclasses.fields`). `Config.save` atomically writes the whole document;
 it's only called after login and on explicit user actions.
 
+### Session persistence
+
+Older versions of jtech-tui only persisted the `_t` cookie value. On
+restart, `Client.__init__` re-attached `_t` to the session host-scoped
+without path/expiry/secure attributes and without `_forum_session`. That
+was fragile: any transient 401 (or 403, which `_check` was also coercing
+to `Unauthorized`) dropped the user straight back to `LoginScreen`,
+making the session feel like it expired the moment you opened the app.
+
+The current client dumps the whole cookie jar via `Client.dump_cookies()`
+on login and restores it verbatim via `Client.load_cookies()` on start.
+`Config.cookies` holds a list of `{name, value, domain, path, expires,
+secure}` entries, so a restored session behaves exactly like the one the
+server handed us. `Config.session_cookie` is still populated for
+backwards-compat with older config files.
+
+`Client._check` now only raises `Unauthorized` on HTTP 401. HTTP 403 is
+an authorization decision on a valid session (staff-only endpoint,
+category permissions) and surfaces as a regular error instead of
+triggering reauth.
+
 ## Adding a new feature
 
 1. If it needs data from Discourse, add a method to `api.Client`. Keep it

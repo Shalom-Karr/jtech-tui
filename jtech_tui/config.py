@@ -14,6 +14,7 @@ class Config:
     default_feed: str = "latest"
     session_cookie: str = ""
     username: str = ""
+    password: str = ""
 
     @staticmethod
     def path() -> Path:

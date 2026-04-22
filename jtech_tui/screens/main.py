@@ -560,13 +560,12 @@ class MainScreen(Screen):
     def _update_notif_badge(self) -> None:
         has_unread = any(not n.get("read") for n in self._notifications_cache)
         try:
-            for tab in self.query_one(Tabs).query(Tab):
-                if tab.id == "tab-notifications":
-                    if has_unread:
-                        tab.label = Text.assemble("Notifications ", ("●", "bold yellow"))
-                    else:
-                        tab.label = "Notifications"
-                    break
+            from textual.widgets._tabbed_content import ContentTab
+            tab = self.query_one("#--content-tab-tab-notifications", ContentTab)
+            tab.label = (
+                Text.assemble("Notifications ", ("●", "bold yellow"))
+                if has_unread else "Notifications"
+            )
         except Exception:  # noqa: BLE001
             pass
 
@@ -644,6 +643,9 @@ class MainScreen(Screen):
                     "id": tid,
                     "title": notif.get("fancy_title") or (notif.get("data") or {}).get("topic_title", ""),
                 }
+                post_number = notif.get("post_number")
+                if isinstance(post_number, int) and post_number > 1:
+                    topic["last_read_post_number"] = post_number - 1
                 self.app.push_screen(ThreadScreen(topic))
 
     # --- compose actions ---

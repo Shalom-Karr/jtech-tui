@@ -5,7 +5,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import Screen
-from textual.widgets import Button, Input, Label, Static
+from textual.widgets import Button, Checkbox, Input, Label, Static
 
 from ..api import Client
 
@@ -18,16 +18,24 @@ class LoginScreen(Screen):
     def __init__(self) -> None:
         super().__init__()
         self._busy = False
+        self._pending_password = ""
 
     def compose(self) -> ComposeResult:
         with Vertical(id="login-box"):
             yield Static("jtech forums · sign in", id="login-title")
             yield Input(placeholder="Username", id="username")
             yield Input(placeholder="Password", id="password", password=True)
+            yield Checkbox("Remember me", id="remember-me")
             yield Button("Log in", variant="primary", id="submit")
             yield Label("", id="login-error")
 
     def on_mount(self) -> None:
+        cfg = self.app.cfg
+        if cfg.username:
+            self.query_one("#username", Input).value = cfg.username
+        if cfg.password:
+            self.query_one("#password", Input).value = cfg.password
+            self.query_one("#remember-me", Checkbox).value = True
         self.query_one("#username", Input).focus()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
@@ -49,6 +57,7 @@ class LoginScreen(Screen):
             self._set_error("enter username and password")
             return
         self._busy = True
+        self._pending_password = password
         self._set_error("signing in…")
         self._do_login(username, password)
 
@@ -75,8 +84,10 @@ class LoginScreen(Screen):
     def _on_login_ok(self, username: str, cookie: str) -> None:
         from .main import MainScreen  # avoid circular import
 
+        remember = self.query_one("#remember-me", Checkbox).value
         app = self.app
         app.cfg.session_cookie = cookie
         app.cfg.username = username
+        app.cfg.password = self._pending_password if remember else ""
         app.cfg.save()
         app.switch_screen(MainScreen())

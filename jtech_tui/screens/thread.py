@@ -314,6 +314,10 @@ class PostsList(ListView):
         if self.index == 0:
             self.post_message(self.NeedMore(self, "above"))
             return
+        # Secondary guard: some Textual versions don't reflect the clamped index
+        # inside super() immediately, causing IndexError in loop_from_index.
+        if isinstance(self.index, int) and self.index >= len(self._nodes):
+            return
         super().action_cursor_up()
 
 
@@ -713,17 +717,65 @@ class ThreadScreen(Screen):
             )
 
     def action_goto_top(self) -> None:
+        if self._stream and self._stream[0] in self._loaded_ids:
+            self._scroll_to_first_loaded()
+            return
+        if self._stream:
+            self._jump_to_top()
+        else:
+            self._scroll_to_first_loaded()
+
+    def _scroll_to_first_loaded(self) -> None:
         posts_list = self.query_one("#posts", PostsList)
         if posts_list.children:
             posts_list.index = 0
-            posts_list.children[0].scroll_visible()
+            self.call_after_refresh(self._do_initial_scroll, 0, 0)
+
+    @work(thread=True, exclusive=True, group="thread-top")
+    def _jump_to_top(self) -> None:
+        head_ids = self._stream[:20]
+        to_fetch = [pid for pid in head_ids if pid not in self._loaded_ids]
+        posts: list[dict] = []
+        if to_fetch:
+            try:
+                posts = self.app.client.thread_fill_missing(self._topic_id, to_fetch)
+            except Exception:  # noqa: BLE001
+                pass
+        if posts:
+            self.app.call_from_thread(self._insert_posts, posts)
+        self.app.call_from_thread(self._scroll_to_first_loaded)
 
     def action_goto_bottom(self) -> None:
+        # If the last post in the full stream is already loaded, jump to it.
+        if self._stream and self._stream[-1] in self._loaded_ids:
+            self._scroll_to_last_loaded()
+            return
+        # Otherwise fetch the tail of the stream first.
+        if self._stream:
+            self._jump_to_bottom()
+        else:
+            self._scroll_to_last_loaded()
+
+    def _scroll_to_last_loaded(self) -> None:
         posts_list = self.query_one("#posts", PostsList)
         n = len(posts_list.children)
         if n:
             posts_list.index = n - 1
-            posts_list.children[n - 1].scroll_visible()
+            self.call_after_refresh(self._do_initial_scroll, n - 1, 0)
+
+    @work(thread=True, exclusive=True, group="thread-bottom")
+    def _jump_to_bottom(self) -> None:
+        tail_ids = self._stream[-20:]
+        to_fetch = [pid for pid in tail_ids if pid not in self._loaded_ids]
+        posts: list[dict] = []
+        if to_fetch:
+            try:
+                posts = self.app.client.thread_fill_missing(self._topic_id, to_fetch)
+            except Exception:  # noqa: BLE001
+                pass
+        if posts:
+            self.app.call_from_thread(self._insert_posts, posts)
+        self.app.call_from_thread(self._scroll_to_last_loaded)
 
     def action_toggle_collapse(self) -> None:
         posts_list = self.query_one("#posts", PostsList)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 
+from textual import work
 from textual.app import App
 from textual.binding import Binding
 
@@ -40,12 +41,36 @@ class JtechApp(App):
 
     def reauth(self) -> None:
         self.cfg.session_cookie = ""
+        if self.cfg.password and self.cfg.username:
+            self.notify("Session expired — reconnecting…", severity="warning")
+            self._silent_reauth()
+            return
         self.cfg.save()
         self.client = Client(self.cfg.forum_url, "")
         while len(self.screen_stack) > 1:
             self.pop_screen()
         self.switch_screen(LoginScreen())
         self.notify("Session expired — please sign in again.", severity="warning")
+
+    @work(thread=True, exclusive=True, group="reauth")
+    def _silent_reauth(self) -> None:
+        try:
+            cookie = self.client.login(self.cfg.username, self.cfg.password)
+        except Exception:  # noqa: BLE001
+            self.cfg.save()
+            self.client = Client(self.cfg.forum_url, "")
+            self.call_from_thread(self._show_login_after_failed_reauth)
+            return
+        self.cfg.session_cookie = cookie
+        self.cfg.save()
+        self.client = Client(self.cfg.forum_url, cookie)
+        self.call_from_thread(self.notify, "Reconnected.", severity="information")
+
+    def _show_login_after_failed_reauth(self) -> None:
+        while len(self.screen_stack) > 1:
+            self.pop_screen()
+        self.switch_screen(LoginScreen())
+        self.notify("Reconnect failed — please sign in again.", severity="warning")
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:

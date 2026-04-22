@@ -23,7 +23,17 @@ from textual.widgets import (
 from .smart_footer import SmartFooter
 
 from ..api import NOTIFICATION_TYPES, Unauthorized
-from ..editor import edit_markdown
+from ..editor import EditorUnavailable, edit_markdown
+
+
+def _open_editor(app, template: str) -> str | None:
+    """Suspend the app, launch $EDITOR, surface editor failures as a toast."""
+    try:
+        with app.suspend():
+            return edit_markdown(template)
+    except EditorUnavailable as e:
+        app.notify(str(e), severity="error", timeout=8)
+        return None
 from .composer import (
     CategoryPickerModal,
     ConfirmModal,
@@ -693,10 +703,9 @@ class MainScreen(Screen):
             if not result:
                 return
             template = f"# {result['title']}\n\nWrite your topic body in markdown.\n"
-            with self.app.suspend():
-                content = edit_markdown(template)
+            content = _open_editor(self.app, template)
             self.refresh()
-            if not content:
+            if content is None:
                 return
             body = _strip_title_header(content).strip()
             if not body:
@@ -726,10 +735,9 @@ class MainScreen(Screen):
             if not result:
                 return
             template = f"# {result['title']}\n\nWrite your private message in markdown.\n"
-            with self.app.suspend():
-                content = edit_markdown(template)
+            content = _open_editor(self.app, template)
             self.refresh()
-            if not content:
+            if content is None:
                 return
             body = _strip_title_header(content).strip()
             if not body:

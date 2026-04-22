@@ -23,7 +23,20 @@ from textual.widgets import (
 from .smart_footer import SmartFooter
 
 from ..api import Unauthorized
-from ..editor import edit_markdown
+from ..editor import EditorUnavailable, edit_markdown
+
+
+def _open_editor(app, template: str) -> str | None:
+    """Wrap edit_markdown so EditorUnavailable surfaces as a toast.
+
+    Returns the editor's contents on success, None on cancel / failure.
+    """
+    try:
+        with app.suspend():
+            return edit_markdown(template)
+    except EditorUnavailable as e:
+        app.notify(str(e), severity="error", timeout=8)
+        return None
 from .composer import (
     ConfirmModal,
     CopyMenuModal,
@@ -646,8 +659,11 @@ class ThreadScreen(Screen):
         sep = "\n\n---\n\n"
         body = sep.join(_post_markdown(p) for p in all_posts)
         content = f"# {title}\n\n{body}"
-        with self.app.suspend():
-            edit_markdown(content, read_only=True)
+        try:
+            with self.app.suspend():
+                edit_markdown(content, read_only=True)
+        except EditorUnavailable as e:
+            self.app.notify(str(e), severity="error", timeout=8)
         self.refresh()
 
     def action_reply(self) -> None:
@@ -665,10 +681,9 @@ class ThreadScreen(Screen):
                 who = item.post.get("username", "")
                 header_hint = f"<!-- replying to @{who} (post #{pn}); save & quit to send -->\n\n"
         tmpl = header_hint or "<!-- write your reply in markdown; save & quit to post -->\n\n"
-        with self.app.suspend():
-            content = edit_markdown(tmpl)
+        content = _open_editor(self.app, tmpl)
         self.refresh()
-        if not content:
+        if content is None:
             return
         body = _strip_template(content).strip()
         if not body:
@@ -680,10 +695,9 @@ class ThreadScreen(Screen):
         if not self._thread:
             return
         tmpl = "<!-- reply to topic; save & quit to post -->\n\n"
-        with self.app.suspend():
-            content = edit_markdown(tmpl)
+        content = _open_editor(self.app, tmpl)
         self.refresh()
-        if not content:
+        if content is None:
             return
         body = _strip_template(content).strip()
         if not body:
@@ -840,10 +854,9 @@ class ThreadScreen(Screen):
         tid = post.get("topic_id") or self._topic_id
         quote_block = f'[quote="{user}, post:{pn}, topic:{tid}"]\n{body.strip()}\n[/quote]\n\n'
         tmpl = f"<!-- quoting @{user} (post #{pn}); save & quit to post -->\n\n{quote_block}"
-        with self.app.suspend():
-            content = edit_markdown(tmpl)
+        content = _open_editor(self.app, tmpl)
         self.refresh()
-        if not content:
+        if content is None:
             return
         stripped = _strip_template(content).strip()
         if not stripped:
@@ -879,10 +892,9 @@ class ThreadScreen(Screen):
             f"<!-- editing your post #{post.get('post_number')}; "
             f"save & quit to update -->\n\n{raw}"
         )
-        with self.app.suspend():
-            content = edit_markdown(tmpl)
+        content = _open_editor(self.app, tmpl)
         self.refresh()
-        if not content:
+        if content is None:
             return
         stripped = _strip_template(content).strip()
         if not stripped:

@@ -1,36 +1,60 @@
-/* Global look */
+/* ---------- Global ---------- */
 Screen {
     background: $surface;
+    color: $text;
 }
 
 Header {
     background: $primary;
     color: $text;
+    text-style: bold;
+    height: 1;
+}
+
+/* A thin accent bar under the header gives a sense of structure. */
+HeaderIcon {
+    color: $accent;
 }
 
 Footer {
     background: $primary-darken-2;
 }
 
-/* Tabs */
+/* ---------- Tabs ---------- */
 TabbedContent {
     height: 1fr;
 }
 
 TabbedContent > ContentTabs {
     background: $panel;
+    border-bottom: hkey $primary-darken-2;
+}
+
+Tabs {
+    height: 3;
 }
 
 Tabs Tab {
     padding: 0 2;
+    color: $text-muted;
+}
+
+Tabs Tab:hover {
+    background: $panel-lighten-1;
+    color: $text;
 }
 
 Tabs Tab.-active {
     color: $accent;
     text-style: bold;
+    background: $boost;
 }
 
-/* Data tables */
+Underline.-active {
+    color: $accent;
+}
+
+/* ---------- Data tables ---------- */
 DataTable {
     height: 1fr;
     background: $surface;
@@ -52,7 +76,21 @@ DataTable > .datatable--hover {
     background: $panel-lighten-1;
 }
 
-/* Markdown viewer */
+DataTable > .datatable--odd-row {
+    background: $surface;
+}
+
+DataTable > .datatable--even-row {
+    background: $boost;
+}
+
+DataTable:focus > .datatable--cursor {
+    background: $accent;
+    color: $background;
+    text-style: bold;
+}
+
+/* ---------- Markdown viewer ---------- */
 #thread-body {
     padding: 1 2;
     background: $surface;
@@ -62,24 +100,31 @@ MarkdownBlock {
     margin: 0 0 1 0;
 }
 
-/* Search */
+/* ---------- Search input on main tab ---------- */
 #search-input {
     dock: top;
     margin: 1 2;
     border: tall $accent;
     height: 3;
+    background: $panel;
 }
 
-/* Login */
+#search-input:focus {
+    border: tall $accent-lighten-1;
+    background: $boost;
+}
+
+/* ---------- Login ---------- */
 LoginScreen {
     align: center middle;
+    background: $surface;
 }
 
 LoginScreen #login-box {
-    width: 54;
+    width: 60;
     height: auto;
     border: round $accent;
-    padding: 1 2;
+    padding: 2 3;
     background: $panel;
 }
 
@@ -90,22 +135,46 @@ LoginScreen #login-title {
     margin: 0 0 1 0;
 }
 
+LoginScreen #login-subtitle {
+    color: $text-muted;
+    content-align: center middle;
+    margin: 0 0 2 0;
+}
+
 LoginScreen Input {
     margin: 0 0 1 0;
+    border: tall $panel-lighten-2;
+}
+
+LoginScreen Input:focus {
+    border: tall $accent;
+}
+
+LoginScreen Button {
+    width: 1fr;
+    margin: 1 0 0 0;
 }
 
 LoginScreen #login-error {
     color: $error;
     margin: 1 0 0 0;
+    content-align: center middle;
+    text-style: italic;
 }
 
-/* Modals */
+LoginScreen #login-hint {
+    color: $text-muted;
+    content-align: center middle;
+    margin: 1 0 0 0;
+}
+
+/* ---------- Modals ---------- */
 ModalScreen {
     align: center middle;
 }
 
 ModalScreen > #modal-box {
-    width: 70;
+    width: 72;
     max-width: 90%;
     height: auto;
     max-height: 80%;
@@ -118,34 +187,47 @@ ModalScreen #modal-title {
     text-style: bold;
     color: $accent;
     margin: 0 0 1 0;
+    content-align: center middle;
 }
 
 ModalScreen Input {
     margin: 0 0 1 0;
+    border: tall $panel-lighten-2;
+}
+
+ModalScreen Input:focus {
+    border: tall $accent;
 }
 
 ModalScreen OptionList {
     height: auto;
-    max-height: 12;
+    max-height: 14;
     border: tall $panel-lighten-2;
     margin: 0 0 1 0;
+    background: $surface;
+}
+
+ModalScreen OptionList:focus {
+    border: tall $accent;
 }
 
 ModalScreen #modal-hint {
     color: $text-muted;
     margin: 1 0 0 0;
+    content-align: center middle;
 }
 
-/* Thread view header */
+/* ---------- Thread view header ---------- */
 #thread-header {
     background: $panel;
     color: $accent;
     text-style: bold;
     padding: 0 2;
     height: 1;
+    border-bottom: hkey $primary-darken-2;
 }
 
-/* Thread posts list */
+/* ---------- Thread posts list ---------- */
 #posts {
     background: $surface;
 }
@@ -171,12 +253,56 @@ ModalScreen #modal-hint {
     background: transparent;
 }
 
-/* Help modal body */
+/* ---------- Help modal body ---------- */
 #help-scroll {
     height: 1fr;
-    max-height: 20;
+    max-height: 22;
+    border: tall $panel-lighten-2;
+    padding: 0 1;
+    background: $surface;
 }
 
 #help-body {
     padding: 0 1;
+}
+
+/* ---------- Footer (SmartFooter custom widget) ---------- */
+SmartFooter {
+    dock: bottom;
+    height: 1;
+    background: $primary-darken-2;
+    color: $text;
+}
+
+/* ---------- Buttons ---------- */
+Button {
+    min-width: 16;
+}
+
+Button.-primary {
+    background: $accent;
+    color: $background;
+    text-style: bold;
+}
+
+Button.-primary:hover {
+    background: $accent-lighten-1;
+}
+
+/* ---------- Notifications / toast ---------- */
+Toast {
+    background: $panel;
+    border: tall $accent;
+}
+
+Toast.-information {
+    border: tall $success;
+}
+
+Toast.-warning {
+    border: tall $warning;
+}
+
+Toast.-error {
+    border: tall $error;
 }

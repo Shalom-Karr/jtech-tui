@@ -71,7 +71,7 @@ class SmartFooter(Widget):
     SmartFooter {
         dock: bottom;
         height: 1;
-        background: $accent 20%;
+        background: $primary-darken-2;
         color: $text;
     }
     """
@@ -85,17 +85,18 @@ class SmartFooter(Widget):
         tail_len = len(tail)
         line = Text()
         for i, (key, desc) in enumerate(items):
-            piece = f" {key} {desc} "
+            # " key " as a reverse-styled pill, then " desc " in muted text.
+            pill_len = len(key) + 2
+            piece_len = pill_len + len(desc) + 2
             more_left = i < len(items) - 1
             reserve = tail_len if more_left else 0
-            if line.cell_len + len(piece) + reserve > width:
+            if line.cell_len + piece_len + reserve > width:
                 line.append("  ")
-                line.append("? all keys", style="reverse bold")
-                line.append(" ")
+                line.append(" ? ", style="reverse bold")
+                line.append(" all keys ", style="dim")
                 return line
-            line.append(" ")
-            line.append(key, style="bold")
-            line.append(f" {desc} ")
+            line.append(f" {key} ", style="reverse bold")
+            line.append(f" {desc} ", style="dim")
         return line
 
     def on_resize(self, event: events.Resize) -> None:

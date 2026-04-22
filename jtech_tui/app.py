@@ -39,12 +39,26 @@ class JtechApp(App):
             self.push_screen(LoginScreen())
 
     def reauth(self) -> None:
+        # Called from worker threads via call_from_thread. We clear the cookie
+        # synchronously so no further requests use it, but defer the screen
+        # swap one tick so any InvokeLater messages queued by the outgoing
+        # screen's widgets drain first. Without this, Textual's message pump
+        # forwards those callbacks to self.app.screen mid-transition and
+        # raises ScreenStackError("No screens on stack").
         self.cfg.session_cookie = ""
         self.cfg.save()
         self.client = Client(self.cfg.forum_url, "")
+        self.call_later(self._reauth_swap)
+
+    def _reauth_swap(self) -> None:
+        if self.screen_stack and isinstance(self.screen, LoginScreen):
+            return
         while len(self.screen_stack) > 1:
             self.pop_screen()
-        self.switch_screen(LoginScreen())
+        if self.screen_stack:
+            self.switch_screen(LoginScreen())
+        else:
+            self.push_screen(LoginScreen())
         self.notify("Session expired — please sign in again.", severity="warning")
 
 

@@ -235,6 +235,16 @@ class PostItem(ListItem):
         self.post = post
         self.reply_to_username = reply_to_username
         self.collapsed = collapsed
+        # Pre-reserve approximate height so virtual_size is roughly accurate from
+        # frame 0. Markdown renders asynchronously over many frames; without this,
+        # posts above a prepended target report height=0 until measured, causing
+        # the viewport to flash upward during prepend / background-load-above.
+        raw = post.get("raw") or _strip_html(post.get("cooked", ""))
+        if collapsed:
+            estimate = 11
+        else:
+            estimate = max(4, len(raw.splitlines()) + 3)
+        self.styles.min_height = estimate
 
     def compose(self) -> ComposeResult:
         yield Markdown(self._md())
@@ -254,6 +264,9 @@ class PostItem(ListItem):
 
     def toggle_collapse(self) -> None:
         self.collapsed = not self.collapsed
+        # Drop min_height so the widget can shrink back down when collapsing.
+        # Markdown will expand the item if the rendered body is taller.
+        self.styles.min_height = 4
         self.refresh_body()
 
 
@@ -412,6 +425,16 @@ class ThreadScreen(Screen):
             data = self._prefetched_data
             self._prefetched_data = None
             self.app.call_from_thread(self._display_thread, data)
+            # Prefetch may be stale — fire a fresh fetch and silently merge any
+            # posts that arrived between hover and open. Without this, a new
+            # reply shows up as an unread pip but is invisible until R.
+            last_read = self._topic.get("last_read_post_number")
+            near_post = last_read if isinstance(last_read, int) and last_read > 1 else None
+            try:
+                fresh = self.app.client.thread(self._topic_id, near_post=near_post)
+            except Exception:  # noqa: BLE001
+                return
+            self.app.call_from_thread(self._merge_new_posts, fresh, notify=False)
             return
         last_read = self._topic.get("last_read_post_number")
         near_post = last_read if isinstance(last_read, int) and last_read > 1 else None

@@ -21,11 +21,14 @@ class LoginScreen(Screen):
 
     def compose(self) -> ComposeResult:
         with Vertical(id="login-box"):
-            yield Static("jtech forums · sign in", id="login-title")
+            yield Static("jtech forums", id="login-title")
+            forum = (self.app.cfg.forum_url or "").rstrip("/")
+            yield Static(forum, id="login-subtitle")
             yield Input(placeholder="Username", id="username")
             yield Input(placeholder="Password", id="password", password=True)
-            yield Button("Log in", variant="primary", id="submit")
+            yield Button("Sign in", variant="primary", id="submit")
             yield Label("", id="login-error")
+            yield Static("enter ↵ to submit  ·  ctrl+q to quit", id="login-hint")
 
     def on_mount(self) -> None:
         self.query_one("#username", Input).focus()

@@ -223,6 +223,10 @@ class MainScreen(Screen):
         yield SmartFooter()
 
     def on_mount(self) -> None:
+        # Show "signed in as @user" in the header sub-title when available.
+        user = (self.app.cfg.username or "").strip()
+        if user:
+            self.app.sub_title = f"signed in as @{user}"
         # Columns
         for f in FEEDS:
             t = self.query_one(f"#tbl-{f}", DataTable)
